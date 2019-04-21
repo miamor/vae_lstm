@@ -16,19 +16,11 @@ def get_train_data(X_file, Y_file, test_size=0.1):
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=test_size, random_state=42)
 
-    # size = X_train.shape
-    # X_train = np.reshape(X_train, (size[0]*size[1], size[2], size[3]))
-
-    # size = X_val.shape
-    # X_val = np.reshape(X_val, (size[0]*size[1], size[2], size[3]))
-
     print(X_train.shape)
     print(X_val.shape)
     print(y_train.shape)
 
     return X_train, y_train, X_val, y_val
-
-    # return data
 
 
 def train(data, vae_obj, model_path, batch_size=1, epochs=20):
@@ -37,10 +29,9 @@ def train(data, vae_obj, model_path, batch_size=1, epochs=20):
     # input_dim = X_train.shape[2:]  # (max_word, word_vector)
     input_dim = X_train.shape[2]  # (max_word)
     timesteps = X_train.shape[1]  # max_sentence
-    print(input_dim)
 
     # ## Create model
-    vae, enc = vae_obj.vae_lstm(input_dim,
+    vae, _ = vae_obj.vae_lstm(input_dim,
                                 timesteps=timesteps,
                                 intermediate_dim=32)
     if not model_path is None:

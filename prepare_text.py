@@ -18,28 +18,11 @@ def load_doc(filename, vocab):
     text = (f.read()).strip(' ')
     # seperate to sentences
     sentences = text.split(' . ')
-    # print(text)
-    # print(sentences)
     # close the file
     f.close()
 
     return sentences
 
-
-def pad_doc(doc, max_sentence):
-    # pad each document to a max length of (max_sentence) sentences
-    if len(doc) < max_sentence:
-        doc_ = doc
-        for i in range(max_sentence - len(doc)):
-            doc_.append('')
-    else:
-        k = 0
-        doc_ = []
-        for sentence in doc:
-            k += 1
-            if k <= max_sentence:
-                doc_.append(sentence)
-    return doc_
 
 def pad_arr(arr, max_len):
     # pad each document to a max length of (max_len) sentences
@@ -75,7 +58,6 @@ def clean_doc(doc, vocab):
         tokens = [w for w in tokens if not w in stop_words]
         # filter out short tokens
         tokens = [word for word in tokens if len(word) > 1]
-        # print(tokens)
 
         tokens = [w for w in tokens if w in vocab]
         tokens_doc.append(' '.join(tokens))
@@ -85,17 +67,14 @@ def clean_doc(doc, vocab):
 # encode each word in each sentence into a vector
 def word2vec_doc(doc, max_word):
     model_path = 'data/Word2vec_skip_n_gram_100.bin'
-    #print(doc)
     encoded_doc = []
-    #print('sentence = ', len(doc))
     for sentence in doc:
         words = sentence.split()
         words = pad_arr(words, max_len=max_word)
-        #print(words)
-        
-        encoded_sentence = [extract_word2vec(model_path, word) for word in words]
+
+        encoded_sentence = [extract_word2vec(
+            model_path, word) for word in words]
         encoded_doc.append(encoded_sentence)
-    #print(encoded_doc)
 
     return encoded_doc
 
@@ -122,13 +101,10 @@ def process_docs(directory, vocab):
 
         labels.append('1' if filename.split('_')[0] == 'm' else '0')
 
-    print(labels)
-
     X = np.array(X)
     labels = to_categorical(labels)
 
     return X, labels
-    # return lines
 
 
 if __name__ == "__main__":
@@ -145,8 +121,6 @@ if __name__ == "__main__":
     np.save('data/x_train_.npy', Xtrain)
     np.save('data/y_train_.npy', Ytrain)
 
-    # print(Xtrain[0])
-    # print(Ytrain)
     print(Xtrain[0].shape)
     print(Xtrain.shape)
     print(Ytrain.shape)
@@ -154,29 +128,3 @@ if __name__ == "__main__":
     Xtest, Ytest = process_docs('data/test', vocab)
     np.save('data/x_test_.npy', Xtest)
     np.save('data/y_test_.npy', Ytest)
-
-    '''
-    # create the tokenizer
-    tokenizer = Tokenizer(num_words=100)
-    # fit the tokenizer on the documents
-    tokenizer.fit_on_sequences(docs_train)
-
-
-
-    # encode training data set
-    Xtrain = tokenizer.sequences_to_matrix(docs_train, mode='freq')
-    print(Xtrain)
-    print(Xtrain.shape)
-
-    # write train data to file
-    np.save('data/x_train_.npy', Xtrain)
-
-
-    # encode test set
-    Xtest = tokenizer.texts_to_matrix(docs_test, mode='freq')
-    print(Xtest)
-    print(Xtest.shape)
-
-    # write test data to file
-    np.save('data/x_test.npy', Xtest)
-    '''
