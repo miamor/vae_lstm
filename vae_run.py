@@ -198,12 +198,29 @@ def train_classifier(X_train, Y_train, save_path='model/classifier.pkl'):
     return classifier
 
 
+def evaluate_classifier(X, Y, classifier_path='model/classifier.pkl'):
+    # Load the pickled model
+    clf = joblib.load(classifier_path) 
+
+    # Use the loaded pickled model to make predictions
+    predictions = clf.predict(X)
+
+    print("\nTest accuration: {}".format(accuracy_score(Y, predictions)))
+    print("Prediction :")
+    print(np.asarray(predictions, dtype="int32"))
+    print("Target :")
+    print(np.asarray(Y, dtype="int32"))
+    print(classification_report(Y, predictions))
+
+
 def test(X, classifier_path='model/classifier.pkl'):
     # Load the pickled model
     clf = joblib.load(classifier_path) 
 
     # Use the loaded pickled model to make predictions
-    clf.predict(X)
+    predictions = clf.predict(X)
+
+    return predictions
 
 
 if __name__ == "__main__":
@@ -221,11 +238,23 @@ if __name__ == "__main__":
     # X_test = np.load('data/x_test_.npy')
     # evaluate(X_test, vae_obj, model_path='model/vae.h5')
 
+
     X_train, y_train, X_val, y_val = data
+
+    # ## Encode X_train
     # X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
     # # Save this representations
     # np.save('data/x_train_enc.npy', X_train_enc)
 
-    # Load X_enc
-    X_train_enc = np.load('data/x_train_enc.npy')
-    clf = train_classifier(X_train_enc, y_train)
+    # ## Encode X_val
+    # X_val_enc = encode(X_val, vae_obj, model_path='model/vae.h5')
+    # # Save this representations
+    # np.save('data/x_val_enc.npy', X_val_enc)
+
+
+    # # Load X_enc
+    # X_train_enc = np.load('data/x_train_enc.npy')
+    # clf = train_classifier(X_train_enc, y_train)
+
+    X_val_enc = np.load('data/x_val_enc.npy')
+    evaluate_classifier(X_val_enc, y_val)
