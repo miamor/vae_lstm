@@ -2,8 +2,20 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, T
 from keras.models import load_model, model_from_json, Model
 from sklearn.model_selection import train_test_split
 
+from sklearn import model_selection
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+
 import numpy as np
 import matplotlib.pyplot as plt
+import joblib
 
 from vae.vae import VAE
 
@@ -32,8 +44,8 @@ def train(data, vae_obj, model_path, batch_size=1, epochs=20):
 
     # ## Create model
     vae, _ = vae_obj.vae_lstm(input_dim,
-                                timesteps=timesteps,
-                                intermediate_dim=32)
+                              timesteps=timesteps,
+                              intermediate_dim=32)
     if not model_path is None:
         # or load model
         vae = load_model(model_path, custom_objects={
@@ -143,30 +155,77 @@ def encode(X, vae_obj, model_path, weights_path=None):
     enc.summary()
 
     # ## Apply model
-    preds = enc.predict(X)
+    X_enc = enc.predict(X)
 
-    print(preds)
+    return X_enc
 
-    # ## Save this representations
-    np.save('data/x_enc.npy', preds)
 
-    return preds
+def train_classifier(X_train, Y_train, save_path='model/classifier.pkl'):
+    """
+    Spot Check Algorithms
+
+    This is just for inspecting which classifier could possibly work best with our data
+    """
+    # models = []
+    # models.append(('LR', LogisticRegression()))
+    # models.append(('LDA', LinearDiscriminantAnalysis()))
+    # models.append(('KNN', KNeighborsClassifier()))
+    # models.append(('CART', DecisionTreeClassifier()))
+    # models.append(('NB', GaussianNB()))
+    # models.append(('SVM', SVC()))
+    # # evaluate each model in turn
+    # results = []
+    # names = []
+    # for name, model in models:
+    #     kfold = model_selection.KFold(n_splits=10, random_state=7)
+    #     cv_results = model_selection.cross_val_score(
+    #         model, X_train, Y_train, cv=kfold, scoring='accuracy')
+    #     results.append(cv_results)
+    #     names.append(name)
+    #     print("{}: {} ({})".format(name, cv_results.mean(), cv_results.std()))
+
+
+    """ 
+    Train the classifier 
+    """
+    classifier = DecisionTreeClassifier()
+    classifier.fit(X_train, Y_train)
+
+    # Save the trained model as a pickle string.
+    joblib.dump(classifier, save_path) 
+
+    # View the pickled model
+    return classifier
+
+
+def test(X, classifier_path='model/classifier.pkl'):
+    # Load the pickled model
+    clf = joblib.load(classifier_path) 
+
+    # Use the loaded pickled model to make predictions
+    clf.predict(X)
 
 
 if __name__ == "__main__":
     batch_size = 1
 
-    # ## Load training data
+    # Load training data
     data = get_train_data('data/x_train_.npy', 'data/y_train_.npy')
 
     vae_obj = VAE(batch_size=batch_size,
                   latent_dim=100,
                   epsilon_std=1.)
-    #vae, enc = train(data, vae_obj, model_path=None, batch_size=batch_size, epochs=40)
+    # vae, enc = train(data, vae_obj, model_path=None, batch_size=batch_size, epochs=40)
 
-    # Load test data
-    X_test = np.load('data/x_test_.npy')
-
+    # ## Load test data
+    # X_test = np.load('data/x_test_.npy')
     # evaluate(X_test, vae_obj, model_path='model/vae.h5')
 
-    encode(X_test, vae_obj, model_path='model/vae.h5')
+    X_train, y_train, X_val, y_val = data
+    # X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
+    # # Save this representations
+    # np.save('data/x_train_enc.npy', X_train_enc)
+
+    # Load X_enc
+    X_train_enc = np.load('data/x_train_enc.npy')
+    clf = train_classifier(X_train_enc, y_train)
