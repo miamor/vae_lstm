@@ -20,6 +20,10 @@ import joblib
 from vae.vae import VAE
 
 
+dataset = 'FLOW016'
+op = 'Op'
+
+
 def get_train_data(X_file, Y_file, test_size=0.1):
     # read data from file
     X = np.load(X_file)
@@ -227,7 +231,7 @@ if __name__ == "__main__":
     batch_size = 1
 
     # Load training data
-    data = get_train_data('data/x_train_.npy', 'data/y_train_.npy')
+    data = get_train_data('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy', 'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy')
 
     vae_obj = VAE(batch_size=batch_size,
                   latent_dim=100,
@@ -256,5 +260,5 @@ if __name__ == "__main__":
     # X_train_enc = np.load('data/x_train_enc.npy')
     # clf = train_classifier(X_train_enc, y_train)
 
-    X_val_enc = np.load('data/x_val_enc.npy')
+    X_val_enc = np.load('data/'+dataset+'/x_val_'+dataset+'_'+op+'_enc.npy')
     evaluate_classifier(X_val_enc, y_val)
