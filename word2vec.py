@@ -11,12 +11,26 @@ from nltk.corpus import stopwords
 warnings.filterwarnings("ignore")
 
 
-def train_word2vec(data_dir, n_feature, model_path, sg):
+dataset = 'FLOW016'
+op = 'Op'
+
+
+# def train_word2vec(data_dir, n_feature, model_path, sg):
+def train_word2vec(data_dirs, n_feature, model_path, sg):
     # make dictionary
     print("Making document list...")
     documents = []
-    train_documnets = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
-    for doc in train_documnets:
+    
+    # train_documents = [os.path.join(data_dir, f) for f in os.listdir(data_dir)]
+
+    train_documents = []
+    for data_dir in data_dirs:
+        for f in os.listdir(data_dir):
+            train_documents.append(os.path.join(data_dir, f))
+
+    print(train_documents)
+
+    for doc in train_documents:
         doc_content = []
         with open(doc) as d:
             for line in d:
@@ -66,7 +80,11 @@ def extract_word2vec(model_path, word, n_feature=100):
 
 
 if __name__ == "__main__":
-    data_dir = "data/asm_for_nlp_1/"
+    # data_dir = "/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/"+dataset
+    data_dir = ['/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op +
+                 '_train',
+
+                 '/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test']
 
     # method = "Word2vec_CBoW"
     method = "Word2vec_skip_n_gram"
@@ -76,12 +94,12 @@ if __name__ == "__main__":
 
     if method == "Word2vec_CBoW":
         sg = 0
-        model_path = "data/" + method + "_" + str(n_feature) + ".bin"
+        model_path = "data/" + method + "_" + str(n_feature) + "__"+dataset+"_"+op+".bin"
         train_word2vec(data_dir, n_feature, model_path, sg)
 
     if method == "Word2vec_skip_n_gram":
         sg = 1
-        model_path = "data/" + method + "_" + str(n_feature) + ".bin"
+        model_path = "data/" + method + "_" + str(n_feature) + "__"+dataset+"_"+op+".bin"
         train_word2vec(data_dir, n_feature, model_path, sg)
 
     # model_path = "data/" + method + "_" + str(n_feature) + ".bin"

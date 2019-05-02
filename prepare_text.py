@@ -6,9 +6,12 @@ from keras.utils import to_categorical
 from gensim.models import Word2Vec
 import numpy as np
 from string import punctuation
-from os import listdir
-from feature_extraction import extract_word2vec
+import os
+from word2vec import extract_word2vec
 
+
+dataset = 'FLOW016'
+op = 'Op'
 
 def load_doc(filename, vocab):
     ''' load and turn a doc into clean tokens '''
@@ -66,7 +69,7 @@ def clean_doc(doc, vocab):
 
 # encode each word in each sentence into a vector
 def word2vec_doc(doc, max_word):
-    model_path = 'data/Word2vec_skip_n_gram_100.bin'
+    model_path = 'data/Word2vec_skip_n_gram_100__'+dataset+'_'+op+'.bin'
     encoded_doc = []
     for sentence in doc:
         words = sentence.split()
@@ -84,9 +87,11 @@ def process_docs(directory, vocab):
     X = []
     labels = []
     # walk through all files in the folder
-    for filename in listdir(directory):
+    for filename in sorted(os.listdir(directory)):
         # create the full path of the file to open
         path = directory + '/' + filename
+        print('process_docs '+path)
+
         # load the doc, return an array of sentences
         doc = load_doc(path, vocab)
         # pad the doc to a maximum number of sentences
@@ -109,22 +114,30 @@ def process_docs(directory, vocab):
 
 if __name__ == "__main__":
     # load the vocabulary
-    vocab_filename = 'data/vocab.txt'
+    vocab_filename = 'data/vocab_'+dataset+'_'+op+'.txt'
     f = open(vocab_filename, 'r')
     vocab = f.read()
     f.close()
     vocab = vocab.split()
     vocab = set(vocab)
 
+    data_save_dir = 'data/'+dataset
+    if not os.path.exists(data_save_dir):
+        os.makedirs(data_save_dir)
+
     # load dataset
-    Xtrain, Ytrain = process_docs('data/asm_for_nlp_1', vocab)
-    np.save('data/x_train_.npy', Xtrain)
-    np.save('data/y_train_.npy', Ytrain)
+    Xtrain, Ytrain = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train', vocab)
+    np.save(data_save_dir+'/x_train_'+dataset+'_'+op+'.npy', Xtrain)
+    np.save(data_save_dir+'/y_train_'+dataset+'_'+op+'.npy', Ytrain)
+
+    # Xval, Yval = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test', vocab)
+    # np.save(data_save_dir+'/x_val_'+dataset+'_'+op+'.npy', Xval)
+    # np.save(data_save_dir+'/y_val_'+dataset+'_'+op+'.npy', Yval)
 
     print(Xtrain[0].shape)
     print(Xtrain.shape)
     print(Ytrain.shape)
 
-    Xtest, Ytest = process_docs('data/test', vocab)
-    np.save('data/x_test_.npy', Xtest)
-    np.save('data/y_test_.npy', Ytest)
+    # Xtest, Ytest = process_docs('data/test', vocab)
+    # np.save('data/x_test_'+dataset+'.npy', Xtest)
+    # np.save('data/y_test_'+dataset+'.npy', Ytest)
