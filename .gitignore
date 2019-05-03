@@ -4,3 +4,6 @@
 __archived
 *.pyc
 */*.pyc
+data
+__pycache__
+.vscode

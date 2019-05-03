@@ -104,12 +104,15 @@ def process_docs(directory, vocab):
         # add to list
         X.append(doc)
 
-        labels.append('1' if filename.split('_')[0] == 'm' else '0')
+        # labels.append('1' if filename.split('_')[0] == 'm' else '0')
+        labels.append(int(filename.split('_')[0]))
 
     X = np.array(X)
-    labels = to_categorical(labels)
+    # Y = np.array(labels)
+    Y = labels
+    Y_onehot = to_categorical(labels)
 
-    return X, labels
+    return X, Y_onehot, Y
 
 
 if __name__ == "__main__":
@@ -126,17 +129,20 @@ if __name__ == "__main__":
         os.makedirs(data_save_dir)
 
     # load dataset
-    Xtrain, Ytrain = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train', vocab)
+    Xtrain, Ytrain_onehot, Ytrain = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train', vocab)
     np.save(data_save_dir+'/x_train_'+dataset+'_'+op+'.npy', Xtrain)
-    np.save(data_save_dir+'/y_train_'+dataset+'_'+op+'.npy', Ytrain)
+    np.save(data_save_dir+'/y_train_'+dataset+'_'+op+'.npy', Ytrain_onehot)
+    np.save(data_save_dir+'/y_train_'+dataset+'_'+op+'__.npy', Ytrain)
 
-    # Xval, Yval = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test', vocab)
-    # np.save(data_save_dir+'/x_val_'+dataset+'_'+op+'.npy', Xval)
-    # np.save(data_save_dir+'/y_val_'+dataset+'_'+op+'.npy', Yval)
+    Xval, Yval_onehot, Yval = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test', vocab)
+    np.save(data_save_dir+'/x_val_'+dataset+'_'+op+'.npy', Xval)
+    np.save(data_save_dir+'/y_val_'+dataset+'_'+op+'.npy', Yval_onehot)
+    np.save(data_save_dir+'/y_val_'+dataset+'_'+op+'__.npy', Yval)
 
-    print(Xtrain[0].shape)
+    # print(Xtrain[0].shape)
     print(Xtrain.shape)
-    print(Ytrain.shape)
+    print(Ytrain_onehot.shape)
+    print(Ytrain)
 
     # Xtest, Ytest = process_docs('data/test', vocab)
     # np.save('data/x_test_'+dataset+'.npy', Xtest)

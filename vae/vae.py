@@ -14,9 +14,10 @@ class VAE(object):
         latent_dim: int, latent z-layer shape.
         epsilon_std: float, z-layer sigma.
     """
+
     def __init__(self, batch_size,
-             latent_dim,
-             epsilon_std=1.):
+                 latent_dim,
+                 epsilon_std=1.):
         self.z_mean = None
         self.z_log_sigma = None
         self.batch_size = batch_size
@@ -36,8 +37,7 @@ class VAE(object):
             shape=(self.batch_size, self.latent_dim), mean=0., stddev=self.epsilon_std)
         return self.z_mean + self.z_log_sigma * epsilon
 
-    def vae_lstm(self, input_dim,
-                 timesteps,
+    def vae_lstm(self, words, word_vec_dim, timesteps,
                  intermediate_dim):
         """
         Creates an LSTM Variational Autoencoder (VAE). Returns VAE, Encoder, Generator. 
@@ -53,14 +53,17 @@ class VAE(object):
             - [Generating sentences from a continuous space](https://arxiv.org/abs/1511.06349)
         """
 
-        input = Input(shape=(10, 50, 100,))
+        input = Input(shape=(timesteps, words, word_vec_dim,))  # (sentences, words, word_vec_dim)
 
         # LSTM encoding
-        encode_sentence = TimeDistributed(LSTM(intermediate_dim, input_shape=(50,100)))(input) # series of word_vector (of one sentence) to one reprentation
-        encode_doc = LSTM(intermediate_dim, return_sequences=False)(encode_sentence) # series of sentence_reprentation to one representation of doc
+        # series of word_vector (of one sentence) to one reprentation (words, word_vec_dim)
+        encode_sentence = TimeDistributed(
+            LSTM(intermediate_dim, input_shape=(words, word_vec_dim)))(input)
+        # series of sentence_reprentation to one representation of doc
+        encode_doc = LSTM(intermediate_dim, return_sequences=False)(
+            encode_sentence)
 
         encode_dense = Dense(intermediate_dim)(encode_doc)
-
 
         # VAE Z layer
         self.z_mean = Dense(self.latent_dim)(encode_dense)
@@ -78,14 +81,16 @@ class VAE(object):
         ''' end-to-end autoencoder '''
         decode_dense = Dense(intermediate_dim)(latent_space)
         repeat_doc_vec = RepeatVector(timesteps)(decode_dense)
-        decode_doc = LSTM(intermediate_dim, return_sequences=True)(repeat_doc_vec) # decode doc representation back to sentenses representations
+        # decode doc representation back to sentenses representations
+        decode_doc = LSTM(intermediate_dim, return_sequences=True)(
+            repeat_doc_vec)
 
         repeat_sentence_vec = TimeDistributed(RepeatVector(50))(decode_doc)
-        decode_sentence = TimeDistributed(LSTM(100, return_sequences=True))(repeat_sentence_vec) # decode sentence representation back to words representations
+        decode_sentence = TimeDistributed(LSTM(100, return_sequences=True))(
+            repeat_sentence_vec)  # decode sentence representation back to words representations
 
         vae = Model(input, decode_sentence)
 
         vae.compile(optimizer='rmsprop', loss=self.vae_loss)
 
         return vae, encoder
-

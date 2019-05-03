@@ -39,15 +39,34 @@ def get_train_data(X_file, Y_file, test_size=0.1):
     return X_train, y_train, X_val, y_val
 
 
+def get_train_data_(X_file, Y_file, X_val_file, Y_val_file):
+    # read data from file
+    X_train = np.load(X_file)
+    y_train = np.load(Y_file)
+
+    X_val = np.load(X_val_file)
+    y_val = np.load(Y_val_file)
+
+    print(X_train.shape)
+    print(X_val.shape)
+    print(y_train.shape)
+
+    return X_train, y_train, X_val, y_val
+
+
 def train(data, vae_obj, model_path, batch_size=1, epochs=20):
     X_train, _, X_val, _ = data
 
     # input_dim = X_train.shape[2:]  # (max_word, word_vector)
-    input_dim = X_train.shape[2]  # (max_word)
+    words = X_train.shape[2]  # (max_word)
+    word_vec_dim = X_train.shape[3]  # (max_word)
     timesteps = X_train.shape[1]  # max_sentence
+    print(word_vec_dim)
+    # input_shape = X_train[1:3]
+    # print(input_shape)
 
     # ## Create model
-    vae, _ = vae_obj.vae_lstm(input_dim,
+    vae, _ = vae_obj.vae_lstm(words=words, word_vec_dim=word_vec_dim,
                               timesteps=timesteps,
                               intermediate_dim=32)
     if not model_path is None:
@@ -133,8 +152,8 @@ def evaluate(X_test, vae_obj, model_path, weights_path=None):
 
     # pick a column to plot.
     print("[plotting...]")
-    #print("X_test[:, 0, 1]", (X_test[:, 0, 1]))
-    #print("preds[:, 0, 1]", (preds[:, 0, 1]))
+    # print("X_test[:, 0, 1]", (X_test[:, 0, 1]))
+    # print("preds[:, 0, 1]", (preds[:, 0, 1]))
     print("x: %s, preds: %s" % (X_test.shape, preds.shape))
     print(X_test[:, 0, 0, 0])
     print(preds[:, 0, 0, 0])
@@ -164,7 +183,7 @@ def encode(X, vae_obj, model_path, weights_path=None):
     return X_enc
 
 
-def train_classifier(X_train, Y_train, save_path='model/classifier.pkl'):
+def train_classifier(X_train, Y_train, clf='CART', save_path='model/classifier.pkl'):
     """
     Spot Check Algorithms
 
@@ -188,15 +207,25 @@ def train_classifier(X_train, Y_train, save_path='model/classifier.pkl'):
     #     names.append(name)
     #     print("{}: {} ({})".format(name, cv_results.mean(), cv_results.std()))
 
-
-    """ 
-    Train the classifier 
     """
-    classifier = DecisionTreeClassifier()
+    Train the classifier
+    """
+    if clf == 'CART':
+        classifier = DecisionTreeClassifier()
+    elif clf == 'LDA':
+        classifier = LinearDiscriminantAnalysis()
+    elif clf == 'LR':
+        classifier = LogisticRegression()
+    elif clf == 'KNN':
+        classifier = KNeighborsClassifier()
+    elif clf == 'NB':
+        classifier = GaussianNB()
+    elif clf == 'SVM':
+        classifier = SVC()
     classifier.fit(X_train, Y_train)
 
     # Save the trained model as a pickle string.
-    joblib.dump(classifier, save_path) 
+    joblib.dump(classifier, save_path)
 
     # View the pickled model
     return classifier
@@ -204,7 +233,7 @@ def train_classifier(X_train, Y_train, save_path='model/classifier.pkl'):
 
 def evaluate_classifier(X, Y, classifier_path='model/classifier.pkl'):
     # Load the pickled model
-    clf = joblib.load(classifier_path) 
+    clf = joblib.load(classifier_path)
 
     # Use the loaded pickled model to make predictions
     predictions = clf.predict(X)
@@ -219,7 +248,7 @@ def evaluate_classifier(X, Y, classifier_path='model/classifier.pkl'):
 
 def test(X, classifier_path='model/classifier.pkl'):
     # Load the pickled model
-    clf = joblib.load(classifier_path) 
+    clf = joblib.load(classifier_path)
 
     # Use the loaded pickled model to make predictions
     predictions = clf.predict(X)
@@ -229,36 +258,67 @@ def test(X, classifier_path='model/classifier.pkl'):
 
 if __name__ == "__main__":
     batch_size = 1
+    do = 'train_clf'
 
+    ''' Train VAE '''
     # Load training data
-    data = get_train_data('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy', 'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy')
+    # data = get_train_data('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy', 'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy')
+    (X_train, y_train, X_val, y_val) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/y_val_'+dataset+'_'+op+'.npy')
 
-    vae_obj = VAE(batch_size=batch_size,
-                  latent_dim=100,
-                  epsilon_std=1.)
-    # vae, enc = train(data, vae_obj, model_path=None, batch_size=batch_size, epochs=40)
+    if do == 'train_VAE':
+        vae_obj = VAE(batch_size=batch_size,
+                      latent_dim=100,
+                      epsilon_std=1.)
+        vae, enc = train(data=(X_train, y_train, X_val, y_val), vae_obj=vae_obj,
+                         model_path=None, batch_size=batch_size, epochs=20)
 
-    # ## Load test data
-    # X_test = np.load('data/x_test_.npy')
-    # evaluate(X_test, vae_obj, model_path='model/vae.h5')
+        # ## Load test data
+        # X_test = np.load('data/x_test_.npy')
+        # evaluate(X_test, vae_obj, model_path='model/vae.h5')
 
+    ''' Use vae to encode data '''
+    if do == 'enc':
+        # Encode X_train
+        X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
+        # Save this representations
+        np.save('data/'+dataset+'/x_train_'+dataset +
+                '_'+op+'_enc.npy', X_train_enc)
 
-    X_train, y_train, X_val, y_val = data
+        # Encode X_val
+        X_val_enc = encode(X_val, vae_obj, model_path='model/vae.h5')
+        # Save this representations
+        np.save('data/'+dataset+'/x_val_'+dataset+'_'+op+'_enc.npy', X_val_enc)
 
-    # ## Encode X_train
-    # X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
-    # # Save this representations
-    # np.save('data/x_train_enc.npy', X_train_enc)
+    ''' Use encode data to train classifier '''
+    if do == 'train_clf':
+        # Train
+        X_train_enc = np.load('data/'+dataset+'/x_train_' +
+                              dataset+'_'+op+'_enc.npy')
+        print(X_train_enc)
+        print('train_enc shape')
+        print(X_train_enc.shape)
+        print(y_train.shape)
 
-    # ## Encode X_val
-    # X_val_enc = encode(X_val, vae_obj, model_path='model/vae.h5')
-    # # Save this representations
-    # np.save('data/x_val_enc.npy', X_val_enc)
+        clf = 'SVM'
+        if clf == 'SVM':
+            (_, y_train, _, y_val) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
+                                                     'data/'+dataset+'/y_train_'+dataset+'_'+op+'__.npy',
+                                                     'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
+                                                     'data/'+dataset+'/y_val_'+dataset+'_'+op+'__.npy')
 
+        train_classifier(X_train_enc, y_train, clf, save_path='model/' +
+                         dataset+'/classifier_'+op+'_'+clf+'.pkl')
 
-    # # Load X_enc
-    # X_train_enc = np.load('data/x_train_enc.npy')
-    # clf = train_classifier(X_train_enc, y_train)
+        # Evaluate
+        X_val_enc = np.load('data/'+dataset+'/x_val_' +
+                            dataset+'_'+op+'_enc.npy')
 
-    X_val_enc = np.load('data/'+dataset+'/x_val_'+dataset+'_'+op+'_enc.npy')
-    evaluate_classifier(X_val_enc, y_val)
+        print('val_enc shape')
+        print(X_val_enc.shape)
+        print(y_val.shape)
+
+        evaluate_classifier(X_val_enc, y_val, classifier_path='model/' +
+                            dataset+'/classifier_'+op+'_'+clf+'.pkl')
