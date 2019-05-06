@@ -7,12 +7,13 @@ import os
 import warnings
 from string import punctuation
 from nltk.corpus import stopwords
+import argparse
 
 warnings.filterwarnings("ignore")
 
 
-dataset = 'FLOW016'
-op = 'Op'
+# dataset = 'FLOW016'
+# op = 'Op'
 
 
 # def train_word2vec(data_dir, n_feature, model_path, sg):
@@ -79,7 +80,11 @@ def extract_word2vec(model_path, word, n_feature=100):
         return word_vec
 
 
-if __name__ == "__main__":
+def main(args):
+
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+
     # data_dir = "/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/"+dataset
     data_dir = ['/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op +
                  '_train',
@@ -105,3 +110,14 @@ if __name__ == "__main__":
     # model_path = "data/" + method + "_" + str(n_feature) + ".bin"
     # vec = extract_word2vec(model_path, 'mov')
     # print(vec)
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='FLOW016_Op')
+
+    args = parser.parse_args()
+
+    main(args)
