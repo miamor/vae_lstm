@@ -16,12 +16,13 @@ from sklearn.svm import SVC
 import numpy as np
 import matplotlib.pyplot as plt
 import joblib
+import argparse
 
 from vae.vae import VAE
 
 
-dataset = 'FLOW016'
-op = 'Op'
+# dataset = 'FLOW016'
+# op = 'Op'
 
 
 def get_train_data(X_file, Y_file, test_size=0.1):
@@ -54,14 +55,14 @@ def get_train_data_(X_file, Y_file, X_val_file, Y_val_file):
     return X_train, y_train, X_val, y_val
 
 
-def train(data, vae_obj, model_path, batch_size=1, epochs=20):
+def train(data, vae_obj, model_path, batch_size=1, epochs=20, out_dir='./checkpoint'):
     X_train, _, X_val, _ = data
 
     # input_dim = X_train.shape[2:]  # (max_word, word_vector)
     words = X_train.shape[2]  # (max_word)
     word_vec_dim = X_train.shape[3]  # (max_word)
     timesteps = X_train.shape[1]  # max_sentence
-    print(word_vec_dim)
+    # print(word_vec_dim)
     # input_shape = X_train[1:3]
     # print(input_shape)
 
@@ -76,14 +77,14 @@ def train(data, vae_obj, model_path, batch_size=1, epochs=20):
     vae.summary()
 
     # ## Fit model
-    model_checkpoint = ModelCheckpoint(filepath='checkpoint/vae_lstm-{epoch:02d}_loss-{loss:.4f}_val_loss-{val_loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath=out_dir+'/vae_lstm-{epoch:02d}_loss-{loss:.5f}_val_loss-{val_loss:.5f}.h5',
                                        monitor='val_loss',
                                        verbose=1,
                                        save_best_only=True,
                                        save_weights_only=False,
                                        mode='auto',
                                        period=1)
-    # csv_logger = CSVLogger(filename='checkpoint/vae_lstm_training_log.csv',
+    # csv_logger = CSVLogger(filename=out_dir+'/vae_lstm_training_log.csv',
     #                       separator=',',
     #                       append=True)
     early_stopping = EarlyStopping(monitor='val_loss',
@@ -100,7 +101,8 @@ def train(data, vae_obj, model_path, batch_size=1, epochs=20):
     callbacks = [model_checkpoint,
                  # csv_logger,
                  early_stopping,
-                 reduce_learning_rate]
+                 reduce_learning_rate
+                 ]
 
     history = vae.fit(X_train, X_train,
                       validation_data=(X_val, X_val),
@@ -256,11 +258,15 @@ def test(X, classifier_path='model/classifier.pkl'):
     return predictions
 
 
-if __name__ == "__main__":
-    batch_size = 1
-    do = 'train_clf'
 
+
+
+def train_VAE(args):
     ''' Train VAE '''
+
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+
     # Load training data
     # data = get_train_data('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy', 'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy')
     (X_train, y_train, X_val, y_val) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
@@ -268,57 +274,115 @@ if __name__ == "__main__":
                                                        'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
                                                        'data/'+dataset+'/y_val_'+dataset+'_'+op+'.npy')
 
-    if do == 'train_VAE':
-        vae_obj = VAE(batch_size=batch_size,
-                      latent_dim=100,
-                      epsilon_std=1.)
-        vae, enc = train(data=(X_train, y_train, X_val, y_val), vae_obj=vae_obj,
-                         model_path=None, batch_size=batch_size, epochs=20)
+    vae_obj = VAE(batch_size=1,
+                  latent_dim=100,
+                  epsilon_std=1.)
 
-        # ## Load test data
-        # X_test = np.load('data/x_test_.npy')
-        # evaluate(X_test, vae_obj, model_path='model/vae.h5')
+    vae, enc = train(data=(X_train, y_train, X_val, y_val),
+                     vae_obj=vae_obj,
+                     model_path=args.model_path,
+                     batch_size=args.batch_size, epochs=args.epochs,
+                     out_dir='checkpoint/'+dataset+'_'+op)
 
+    # ## Load test data
+    # X_test = np.load('data/x_test_.npy')
+    # evaluate(X_test, vae_obj, model_path='model/vae.h5')
+
+
+def encode(args):
     ''' Use vae to encode data '''
-    if do == 'enc':
-        # Encode X_train
-        X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
-        # Save this representations
-        np.save('data/'+dataset+'/x_train_'+dataset +
-                '_'+op+'_enc.npy', X_train_enc)
 
-        # Encode X_val
-        X_val_enc = encode(X_val, vae_obj, model_path='model/vae.h5')
-        # Save this representations
-        np.save('data/'+dataset+'/x_val_'+dataset+'_'+op+'_enc.npy', X_val_enc)
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+    model_path = args.model_path
 
+    # model_path = 'checkpoint/__/vae_lstm-300_loss-0.01565_val_loss-0.01560.h5'
+    
+    X_train_enc = np.load('data/'+dataset+'/x_train_' +
+                          dataset+'_'+op+'_enc.npy')
+    X_val_enc = np.load('data/'+dataset+'/x_val_' +
+                        dataset+'_'+op+'_enc.npy')
+
+    # Encode X_train
+    # X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
+    X_train_enc = encode(
+        X_train, vae_obj, model_path=model_path)
+    # Save this representations
+    np.save('data/'+dataset+'/x_train_'+dataset +
+            '_'+op+'_enc.npy', X_train_enc)
+
+    # Encode X_val
+    X_val_enc = encode(X_val, vae_obj, model_path=model_path)
+    # Save this representations
+    np.save('data/'+dataset+'/x_val_'+dataset+'_'+op+'_enc.npy', X_val_enc)
+
+
+def train_clf(args):
     ''' Use encode data to train classifier '''
-    if do == 'train_clf':
-        # Train
-        X_train_enc = np.load('data/'+dataset+'/x_train_' +
-                              dataset+'_'+op+'_enc.npy')
-        print(X_train_enc)
-        print('train_enc shape')
-        print(X_train_enc.shape)
-        print(y_train.shape)
 
-        clf = 'SVM'
-        if clf == 'SVM':
-            (_, y_train, _, y_val) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
-                                                     'data/'+dataset+'/y_train_'+dataset+'_'+op+'__.npy',
-                                                     'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
-                                                     'data/'+dataset+'/y_val_'+dataset+'_'+op+'__.npy')
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+    clf = args.clf
 
-        train_classifier(X_train_enc, y_train, clf, save_path='model/' +
-                         dataset+'/classifier_'+op+'_'+clf+'.pkl')
+    # Train
+    X_train_enc = np.load('data/'+dataset+'/x_train_' +
+                          dataset+'_'+op+'_enc.npy')
 
-        # Evaluate
-        X_val_enc = np.load('data/'+dataset+'/x_val_' +
-                            dataset+'_'+op+'_enc.npy')
+    if clf in ['SVM', 'LR']:
+        (_, y_train, _, y_val) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
+                                                 'data/'+dataset+'/y_train_'+dataset+'_'+op+'__.npy',
+                                                 'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
+                                                 'data/'+dataset+'/y_val_'+dataset+'_'+op+'__.npy')
 
-        print('val_enc shape')
-        print(X_val_enc.shape)
-        print(y_val.shape)
+    print(X_train_enc)
+    print('train_enc shape')
+    print(X_train_enc.shape)
+    print(y_train.shape)
 
-        evaluate_classifier(X_val_enc, y_val, classifier_path='model/' +
-                            dataset+'/classifier_'+op+'_'+clf+'.pkl')
+    train_classifier(X_train_enc, y_train, clf, save_path='model/' +
+                     dataset+'/classifier_'+op+'_'+clf+'.pkl')
+
+    # Evaluate
+    X_val_enc = np.load('data/'+dataset+'/x_val_' +
+                        dataset+'_'+op+'_enc.npy')
+
+    print('val_enc shape')
+    print(X_val_enc.shape)
+    print(y_val.shape)
+
+    evaluate_classifier(X_val_enc, y_val, classifier_path='model/' +
+                        dataset+'/classifier_'+op+'_'+clf+'.pkl')
+
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='FLOW016_Op')
+
+    subparsers = parser.add_subparsers(dest='mode', help="Mode")
+
+    train_VAE_Parser = subparsers.add_parser('train_VAE',
+                                             help="Train a new model.")
+    train_VAE_Parser.add_argument('-b', '--batch_size', type=int, default=512)
+    train_VAE_Parser.add_argument('-e', '--epochs', type=int, default=300)
+    train_VAE_Parser.add_argument('-m', '--model_path', type=str, default=None)
+
+    encodeParser = subparsers.add_parser(
+        'encode', help='Encode using trained VAE.')
+    encodeParser.add_argument('-m', '--model_path', type=str)
+
+    train_clf_Parser = subparsers.add_parser(
+        'encode', help='Encode using trained VAE.')
+    train_clf_Parser.add_argument('-c', '--clf', type=str, default='CART')
+
+
+    args = parser.parse_args()
+
+    if args.mode == 'train_VAE':
+        train_VAE(args)
+    elif args.mode == 'encode':
+        encode(args)
+    elif args.mode == 'train_clf':
+        train_clf(args)

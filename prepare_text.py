@@ -9,9 +9,12 @@ from string import punctuation
 import os
 from word2vec import extract_word2vec
 
+import argparse
 
-dataset = 'FLOW016'
-op = 'Op'
+# dataset = 'FLOW016'
+# op = 'Op'
+# N_SENTENCES = 12
+# N_WORDS = 10
 
 def load_doc(filename, vocab):
     ''' load and turn a doc into clean tokens '''
@@ -68,8 +71,7 @@ def clean_doc(doc, vocab):
 
 
 # encode each word in each sentence into a vector
-def word2vec_doc(doc, max_word):
-    model_path = 'data/Word2vec_skip_n_gram_100__'+dataset+'_'+op+'.bin'
+def word2vec_doc(doc, max_word, model_path):
     encoded_doc = []
     for sentence in doc:
         words = sentence.split()
@@ -83,7 +85,7 @@ def word2vec_doc(doc, max_word):
 
 
 # load all docs in a directory
-def process_docs(directory, vocab):
+def process_docs(directory, vocab, n_sentences, n_words, w2v_model_path):
     X = []
     labels = []
     # walk through all files in the folder
@@ -95,11 +97,11 @@ def process_docs(directory, vocab):
         # load the doc, return an array of sentences
         doc = load_doc(path, vocab)
         # pad the doc to a maximum number of sentences
-        doc = pad_arr(doc, max_len=10)
+        doc = pad_arr(doc, max_len=n_sentences)
         # clean doc
         doc = clean_doc(doc, vocab)
         # encode doc
-        doc = word2vec_doc(doc, max_word=50)
+        doc = word2vec_doc(doc, max_word=n_words, model_path=w2v_model_path)
 
         # add to list
         X.append(doc)
@@ -115,7 +117,11 @@ def process_docs(directory, vocab):
     return X, Y_onehot, Y
 
 
-if __name__ == "__main__":
+
+def main(args):
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+
     # load the vocabulary
     vocab_filename = 'data/vocab_'+dataset+'_'+op+'.txt'
     f = open(vocab_filename, 'r')
@@ -128,13 +134,19 @@ if __name__ == "__main__":
     if not os.path.exists(data_save_dir):
         os.makedirs(data_save_dir)
 
-    # load dataset
-    Xtrain, Ytrain_onehot, Ytrain = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train', vocab)
+
+    w2v_model_path = 'data/Word2vec_skip_n_gram_100__'+dataset+'_'+op+'.bin'
+
+
+    ## load dataset
+    Xtrain, Ytrain_onehot, Ytrain = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train', vocab, args.n_sentences, args.n_words, w2v_model_path)
+    # save 
     np.save(data_save_dir+'/x_train_'+dataset+'_'+op+'.npy', Xtrain)
     np.save(data_save_dir+'/y_train_'+dataset+'_'+op+'.npy', Ytrain_onehot)
     np.save(data_save_dir+'/y_train_'+dataset+'_'+op+'__.npy', Ytrain)
 
-    Xval, Yval_onehot, Yval = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test', vocab)
+    Xval, Yval_onehot, Yval = process_docs('/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test', vocab, args.n_sentences, args.n_words, w2v_model_path)
+    # save
     np.save(data_save_dir+'/x_val_'+dataset+'_'+op+'.npy', Xval)
     np.save(data_save_dir+'/y_val_'+dataset+'_'+op+'.npy', Yval_onehot)
     np.save(data_save_dir+'/y_val_'+dataset+'_'+op+'__.npy', Yval)
@@ -147,3 +159,17 @@ if __name__ == "__main__":
     # Xtest, Ytest = process_docs('data/test', vocab)
     # np.save('data/x_test_'+dataset+'.npy', Xtest)
     # np.save('data/y_test_'+dataset+'.npy', Ytest)
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='FLOW016_Op')
+    parser.add_argument('-ns', '--n_sentences', type=int)
+    parser.add_argument('-nw', '--n_words', type=int)
+
+    args = parser.parse_args()
+
+    main(args)
+

@@ -2,9 +2,15 @@ from string import punctuation
 import os
 from collections import Counter
 from nltk.corpus import stopwords
+import numpy as np
+import matplotlib.pyplot as plt
 
-if __name__ == '__main__':
-    dDir = '/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq'
+
+dataset = 'FLOW016'
+op = 'NoOp'
+
+
+def file_to_folder(dDir):
     # list dataset file
     for file in os.listdir(dDir):
         dataset = file.split('_')[0]
@@ -31,3 +37,64 @@ if __name__ == '__main__':
             # print(label)
             k += 1
         f.close()
+
+
+def stat(dirs):
+    n_sentences = []
+    n_words = []
+
+    # walk through all files in the folder
+    for directory in dirs:
+        for filename in sorted(os.listdir(directory)):
+            file_path = directory + '/' + filename
+            # get sentences of this file
+            f = open(file_path, "r")
+            content = f.read()
+            sentences = content.split(' . ')
+            n_sentences.append(len(sentences))
+            for sentence in sentences:
+                # n_words.append(sentence.split(' '))
+                words = sentence.split(' ')
+                n_words.append(len(words))
+            f.close()
+
+    n_sentences_ar = np.array(n_sentences)
+    n_words_ar = np.array(n_words)
+    mean_sentences = np.mean(n_sentences_ar)
+    mean_words = np.mean(n_words_ar)
+
+    print('n_sentences ', n_sentences_ar)
+    print('n_words ', n_words_ar)
+    print('mean_sentences ', mean_sentences)
+    print('n_words ', mean_words)
+
+
+    plt.figure()
+    objects = range(len(n_sentences))
+    y_pos = np.arange(len(objects))
+    plt.bar(y_pos, n_sentences, align='center', alpha=0.5)
+    plt.xticks(y_pos, objects)
+    plt.ylabel('Sentences')
+
+
+    plt.figure()
+    objects = range(len(n_words))
+    y_pos = np.arange(len(objects))
+    plt.bar(y_pos, n_words, align='center', alpha=0.5)
+    plt.xticks(y_pos, objects)
+    plt.ylabel('Words')
+
+    plt.show()
+
+
+
+
+if __name__ == '__main__':
+    dDir = '/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq'
+    # file_to_folder(dDir)
+
+    dirs = [os.path.join(dDir, dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train'),
+            os.path.join(dDir, dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test')]
+    # dirs = [os.path.join(dDir, dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test')]
+    stat(dirs)
+

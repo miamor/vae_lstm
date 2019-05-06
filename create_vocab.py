@@ -2,9 +2,10 @@ from string import punctuation
 from os import listdir
 from collections import Counter
 from nltk.corpus import stopwords
+import argparse
 
-dataset = 'FLOW016'
-op = 'Op'
+# dataset = 'FLOW016'
+# op = 'NoOp'
 
 ''' 
 Define a Vocabulary 
@@ -21,10 +22,9 @@ def load_doc(filename):
     file.close()
     return text
 
-# turn a doc into clean tokens
-
 
 def clean_doc(doc):
+    ''' turn a doc into clean tokens '''
     # split into tokens by white space
     tokens = doc.split()
     # remove punctuation from each token
@@ -39,10 +39,9 @@ def clean_doc(doc):
     tokens = [word for word in tokens if len(word) > 1]
     return tokens
 
-# load doc and add to vocab
-
 
 def add_doc_to_vocab(filename, vocab):
+    ''' load doc and add to vocab '''
     # load doc
     doc = load_doc(filename)
     # clean doc
@@ -50,10 +49,9 @@ def add_doc_to_vocab(filename, vocab):
     # update counts
     vocab.update(tokens)
 
-# load all docs in a directory
-
 
 def process_docs(directory, vocab):
+    ''' load all docs in a directory '''
     # walk through all files in the folder
     for filename in listdir(directory):
         # print(filename)
@@ -62,11 +60,10 @@ def process_docs(directory, vocab):
         # add doc to vocab
         add_doc_to_vocab(path, vocab)
 
-# save list to file
-
 
 def save_list(lines, filename):
-        # convert lines to a single blob of text
+    ''' save list to file '''
+    # convert lines to a single blob of text
     data = '\n'.join(lines)
     # open file
     file = open(filename, 'w')
@@ -76,7 +73,7 @@ def save_list(lines, filename):
     file.close()
 
 
-def create_vocab(input_dirs):
+def create_vocab(input_dirs, out_path):
     # define vocab
     vocab = Counter()
 
@@ -95,13 +92,27 @@ def create_vocab(input_dirs):
     print(len(tokens))
 
     # save tokens to a vocabulary file
-    save_list(tokens, 'data/vocab_'+dataset+'_'+op+'.txt')
+    save_list(tokens, out_path)
 
 
-if __name__ == '__main__':
+def main(args):
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+
     data_dirs = ['/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op +
                  '_train',
 
                  '/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq/'+dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test']
 
-    create_vocab(data_dirs)
+    out_path = 'data/vocab_'+dataset+'_'+op+'.txt'
+    create_vocab(data_dirs, out_path)
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='FLOW016_Op')
+
+    args = parser.parse_args()
+
+    main(args)

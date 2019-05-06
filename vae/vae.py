@@ -28,6 +28,7 @@ class VAE(object):
         xent_loss = objectives.mse(x, x_decoded_mean)
         kl_loss = - 0.5 * K.mean(1 + self.z_log_sigma -
                                  K.square(self.z_mean) - K.exp(self.z_log_sigma))
+        # xent_loss = K.mean(xent_loss)
         loss = xent_loss + kl_loss
         return loss
 
@@ -53,7 +54,8 @@ class VAE(object):
             - [Generating sentences from a continuous space](https://arxiv.org/abs/1511.06349)
         """
 
-        input = Input(shape=(timesteps, words, word_vec_dim,))  # (sentences, words, word_vec_dim)
+        # (sentences, words, word_vec_dim)
+        input = Input(shape=(timesteps, words, word_vec_dim,))
 
         # LSTM encoding
         # series of word_vector (of one sentence) to one reprentation (words, word_vec_dim)
@@ -85,8 +87,8 @@ class VAE(object):
         decode_doc = LSTM(intermediate_dim, return_sequences=True)(
             repeat_doc_vec)
 
-        repeat_sentence_vec = TimeDistributed(RepeatVector(50))(decode_doc)
-        decode_sentence = TimeDistributed(LSTM(100, return_sequences=True))(
+        repeat_sentence_vec = TimeDistributed(RepeatVector(words))(decode_doc)
+        decode_sentence = TimeDistributed(LSTM(word_vec_dim, return_sequences=True))(
             repeat_sentence_vec)  # decode sentence representation back to words representations
 
         vae = Model(input, decode_sentence)
