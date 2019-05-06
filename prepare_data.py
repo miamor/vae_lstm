@@ -4,13 +4,15 @@ from collections import Counter
 from nltk.corpus import stopwords
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 
-
-dataset = 'FLOW016'
-op = 'NoOp'
-
+# dataset = 'FLOW016'
+# op = 'NoOp'
 
 def file_to_folder(dDir):
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+
     # list dataset file
     for file in os.listdir(dDir):
         dataset = file.split('_')[0]
@@ -91,7 +93,17 @@ def stat(dirs):
 
 if __name__ == '__main__':
     dDir = '/media/tunguyen/Others/Dataset/assembly_data/CodeChef_Data_ASM_Seq'
-    # file_to_folder(dDir)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, default='FLOW016_Op')
+
+    args = parser.parse_args()
+
+    dataset = args.dataset.split('_')[0]
+    op = args.dataset.split('_')[1]
+
+
+    # file_to_folder(dDir, args)
 
     dirs = [os.path.join(dDir, dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_train'),
             os.path.join(dDir, dataset+'/'+op+'/'+dataset+'_Seq_'+op+'_test')]

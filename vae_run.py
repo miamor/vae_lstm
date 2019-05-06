@@ -303,6 +303,10 @@ def encode_main(args):
                                                        'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
                                                        'data/'+dataset+'/y_val_'+dataset+'_'+op+'.npy')
 
+    vae_obj = VAE(batch_size=1,
+                  latent_dim=100,
+                  epsilon_std=1.)
+
     # Encode X_train
     # X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
     X_train_enc = encode(
