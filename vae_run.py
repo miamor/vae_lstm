@@ -289,7 +289,7 @@ def train_VAE(args):
     # evaluate(X_test, vae_obj, model_path='model/vae.h5')
 
 
-def encode(args):
+def encode_main(args):
     ''' Use vae to encode data '''
 
     dataset = args.dataset.split('_')[0]
@@ -297,11 +297,11 @@ def encode(args):
     model_path = args.model_path
 
     # model_path = 'checkpoint/__/vae_lstm-300_loss-0.01565_val_loss-0.01560.h5'
-    
-    X_train_enc = np.load('data/'+dataset+'/x_train_' +
-                          dataset+'_'+op+'_enc.npy')
-    X_val_enc = np.load('data/'+dataset+'/x_val_' +
-                        dataset+'_'+op+'_enc.npy')
+
+    (X_train, _, X_val, _) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/y_val_'+dataset+'_'+op+'.npy')
 
     # Encode X_train
     # X_train_enc = encode(X_train, vae_obj, model_path='model/vae.h5')
@@ -333,6 +333,11 @@ def train_clf(args):
                                                  'data/'+dataset+'/y_train_'+dataset+'_'+op+'__.npy',
                                                  'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
                                                  'data/'+dataset+'/y_val_'+dataset+'_'+op+'__.npy')
+    else:
+        (_, y_train, _, y_val) = get_train_data_('data/'+dataset+'/x_train_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/y_train_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/x_val_'+dataset+'_'+op+'.npy',
+                                                       'data/'+dataset+'/y_val_'+dataset+'_'+op+'.npy')
 
     print(X_train_enc)
     print('train_enc shape')
@@ -383,6 +388,6 @@ if __name__ == "__main__":
     if args.mode == 'train_VAE':
         train_VAE(args)
     elif args.mode == 'encode':
-        encode(args)
+        encode_main(args)
     elif args.mode == 'train_clf':
         train_clf(args)
